@@ -1,0 +1,474 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: "Resenia Project Technical Guidelines"
+globs:
+alwaysApply: true
+---
+# RESENIA_ARCHITECTURE_STANDARDS_V1
+
+## project_overview
+```json
+{
+  "project_name": "ResenIA",
+  "project_type": "AI-powered review generation platform",
+  "primary_function": "Transform customer feedback into authentic online reviews",
+  "core_workflow": [
+    "Collect customer feedback through surveys",
+    "Apply AI to identify satisfied customers",
+    "Generate review drafts based on feedback",
+    "Facilitate one-click publishing to review platforms"
+  ],
+  "target_platforms": ["Google", "Yelp", "TripAdvisor"],
+  "problem_solved": "Only 1 in 10 satisfied customers leave reviews without prompting"
+}
+```
+
+## mission_statement
+```json
+{
+  "objective": "Help businesses convert positive customer feedback into online reviews",
+  "intended_outcomes": [
+    "Increased online visibility",
+    "Enhanced business credibility",
+    "Accelerated business growth"
+  ],
+  "method": "AI-powered automation of review generation and submission"
+}
+```
+
+## vision_statement
+```json
+{
+  "future_state": "World where customer satisfaction automatically converts to online presence",
+  "measurable_outcomes": [
+    "Improved search ranking and visibility",
+    "Increased new customer acquisition",
+    "Data-driven business improvements"
+  ]
+}
+```
+
+## core_value_proposition
+```json
+[
+  {
+    "benefit": "Multiply Online Reviews",
+    "mechanism": "Convert survey responses into publishable reviews",
+    "metric": "Increase review volume by 300%",
+    "key_features": [
+      "AI-generated review drafts from survey data",
+      "One-click publishing to major platforms",
+      "Follow-up automation for incomplete reviews"
+    ]
+  },
+  {
+    "benefit": "Elevate Star Ratings",
+    "mechanism": "Smart sentiment analysis to identify satisfied customers",
+    "metric": "Average rating improvement of 1.2 stars",
+    "key_features": [
+      "Sentiment analysis identifies happy customers",
+      "Authentic, emotionally resonant content",
+      "Private channel for negative feedback"
+    ]
+  },
+  {
+    "benefit": "Drive Business Growth",
+    "mechanism": "Transform online reputation into business results",
+    "metric": "Average 32% increase in new customers",
+    "key_features": [
+      "Higher search ranking and visibility",
+      "Increased customer trust and conversion",
+      "Data-driven business improvement insights"
+    ]
+  }
+]
+```
+
+## technology_stack
+```json
+{
+  "frontend": {
+    "framework": "Next.js 15+",
+    "routing": "App Router",
+    "ui_library": "React 19+",
+    "language": "TypeScript",
+    "styling": "Tailwind CSS",
+    "component_library": "Shadcn/Radix UI Components"
+  },
+  "backend": {
+    "api": "GraphQL",
+    "graphql_implementation": ["Yoga", "Nexus", "Genql"],
+    "database_orm": "Prisma",
+    "auth_provider": "Supabase Auth",
+    "job_processing": "BullMQ with Redis",
+    "ai_integration": "LangChain"
+  }
+}
+```
+
+## application_architecture
+```json
+{
+  "core_sections": [
+    {
+      "name": "Landing Page",
+      "path": "/app/page.tsx",
+      "purpose": "Marketing and user acquisition",
+      "characteristics": [
+        "SEO optimization crucial",
+        "Focus on conversion elements",
+        "Public-facing features"
+      ],
+      "implementation_guidance": "Add new public-facing features here"
+    },
+    {
+      "name": "Admin Dashboard",
+      "path": "/app/admin/",
+      "purpose": "System administration",
+      "features": [
+        "User and organization management",
+        "Assessment template management",
+        "Global settings and configurations"
+      ],
+      "implementation_guidance": "Add system-wide administrative controls here"
+    },
+    {
+      "name": "Organization Admin",
+      "path": "/app/org-admin/",
+      "purpose": "Organization-specific administration",
+      "features": [
+        "User management within organization context",
+        "Analytics and reporting for organizations",
+        "Survey management"
+      ],
+      "implementation_guidance": "Add org-level management features here"
+    },
+    {
+      "name": "User Dashboard/Workspace",
+      "path": "/app/protected/workspace/",
+      "purpose": "End-user features and tools",
+      "features": [
+        "Personal settings and profile management",
+        "Assessment interactions",
+        "User activity tracking"
+      ],
+      "implementation_guidance": "Add features that enhance individual user experience here"
+    },
+    {
+      "name": "Authentication Flow",
+      "path": ["/app/(auth-pages)/", "/app/auth/"],
+      "purpose": "User identity management",
+      "features": [
+        "User registration and login",
+        "Password reset",
+        "Session management"
+      ],
+      "implementation_guidance": "Modify with caution - coordinate with auth team"
+    }
+  ],
+  "feature_implementation_strategy": {
+    "system_wide_features": {"target": "Admin Dashboard"},
+    "organization_features": {"target": "Org Admin Dashboard"},
+    "user_specific_features": {"target": "User Workspace"},
+    "authentication_changes": {"requirement": "Coordinate with auth team"},
+    "api_related_features": {"target": "/app/api/ endpoints"},
+    "database_schema_changes": {"requirement": "Follow Prisma migration patterns"}
+  }
+}
+```
+
+## authentication_integration
+```json
+{
+  "pattern": "Supabase Auth + Prisma",
+  "principles": [
+    "Supabase Auth is the single source of truth for user authentication",
+    "Prisma directly references `auth.users` through multiSchema support",
+    "Never duplicate user data that exists in auth.users",
+    "All foreign keys to users must use UUID types (@db.Uuid)"
+  ],
+  "configuration": {
+    "prisma_generator": {
+      "provider": "prisma-client-js",
+      "previewFeatures": ["multiSchema"],
+      "engineType": "binary"
+    },
+    "datasource": {
+      "provider": "postgresql",
+      "url": "env(\"DATABASE_URL\")",
+      "directUrl": "env(\"DIRECT_URL\")",
+      "schemas": ["public", "auth"]
+    },
+    "user_model": {
+      "id": "String @id @db.Uuid",
+      "email": "String @unique",
+      "raw_user_meta_data": "Json? @map(\"raw_user_meta_data\")",
+      "raw_app_meta_data": "Json? @map(\"raw_app_meta_data\")",
+      "created_at": "DateTime @db.Timestamptz(6)",
+      "mapping": "@@map(\"users\")",
+      "schema": "@@schema(\"auth\")"
+    }
+  },
+  "implementation": [
+    "Use middleware.ts for route protection and session management",
+    "Follow established pattern for auth callbacks and token exchange",
+    "Use createClient functions from utils/supabase for server and client contexts"
+  ]
+}
+```
+
+## service_architecture
+```json
+{
+  "api_layer": {
+    "technology": "GraphQL",
+    "implementation": {
+      "server": "graphql-yoga",
+      "schema_generation": "Nexus",
+      "client_generation": "Genql"
+    }
+  },
+  "data_mutation_patterns": [
+    {"pattern": "Server actions", "usage": "Form submissions and mutations"},
+    {"pattern": "API routes", "usage": "External integrations"},
+    {"pattern": "React Server Components", "usage": "Data loading when possible"}
+  ],
+  "background_processing": {
+    "technology": "BullMQ with Redis",
+    "use_cases": [
+      "Email sending",
+      "Report generation",
+      "Data processing"
+    ]
+  },
+  "ai_integrations": {
+    "technology": "LangChain",
+    "capabilities": [
+      "Prompt engineering",
+      "Context management",
+      "API integration with OpenAI/Anthropic models"
+    ]
+  }
+}
+```
+
+## database_data_access
+```json
+{
+  "orm": {
+    "technology": "Prisma",
+    "migration_strategy": "Prefer Prisma migrations over raw SQL scripts",
+    "exploration_tools": "Use Supabase MCP to query database before generating SQL queries"
+  },
+  "security": {
+    "mechanism": "Row Level Security (RLS) in Supabase"
+  },
+  "access_patterns": {
+    "server_components": "Direct Prisma queries",
+    "client_components": "Server actions or GraphQL",
+    "api_routes": "Prisma with proper auth checks"
+  }
+}
+```
+
+## frontend_development
+```json
+{
+  "component_architecture": {
+    "default_approach": "React Server Components (RSC)",
+    "client_components": "Only when necessary with 'use client' directive"
+  },
+  "design_approach": {
+    "primary": "Mobile-first responsive design",
+    "styling": "Tailwind CSS",
+    "component_library": "Shadcn UI extended with Radix when needed",
+    "variant_handling": "Class Variance Authority (CVA)"
+  },
+  "consistency_requirement": "Maintain consistent design throughout the project"
+}
+```
+
+## styling_design_system
+```json
+{
+  "approach": "Tailwind CSS with utility-first methodology",
+  "shared_styles_file": "src/styles/shared-styles.tsx",
+  "design_elements": {
+    "animations": [
+      "fadeInUp", 
+      "staggered animations"
+    ],
+    "component_classes": {
+      "page_structure": [
+        ".page-header", 
+        ".page-title", 
+        ".page-subtitle"
+      ],
+      "cards": [
+        ".resenia-card"
+      ],
+      "buttons": [
+        ".resenia-btn"
+      ],
+      "status_indicators": [
+        ".status-badge"
+      ],
+      "tables": [
+        ".resenia-table"
+      ],
+      "navigation": [
+        ".resenia-tabs"
+      ]
+    },
+    "effects": [
+      ".hover-card-effect"
+    ]
+  },
+  "requirements": [
+    "Ensure custom components match the established design language",
+    "Always follow the predefined class naming conventions"
+  ]
+}
+```
+
+## ux_design_principles
+```json
+{
+  "best_practices": {
+    "information_architecture": "Clear visual hierarchy",
+    "navigation": "Intuitive patterns",
+    "feedback": "Appropriate feedback for user actions",
+    "accessibility": "WCAG compliance",
+    "cognitive_load": "Minimize cognitive load and decision fatigue"
+  },
+  "consistency_requirements": {
+    "design_tokens": "Use for colors, spacing, typography",
+    "component_styling": "Consistent across all pages",
+    "interaction_patterns": "Follow established patterns",
+    "visual_language": "Match throughout application",
+    "responsive_behavior": "Predictable across devices"
+  },
+  "progressive_enhancement": {
+    "core_functionality": "Works without JavaScript",
+    "feature_degradation": "Enhanced features gracefully degrade",
+    "network_considerations": "Optimize for varying network conditions"
+  },
+  "user_centered_approach": {
+    "design_priority": "User needs over technical constraints",
+    "loading_states": "Appropriate states and transitions",
+    "error_handling": "Meaningful messages and recovery paths",
+    "edge_cases": "Consider accessibility needs"
+  }
+}
+```
+
+## debugging_tools
+```json
+{
+  "tool_group": "BrowserTools MCP",
+  "categories": {
+    "console_inspection": [
+      {"command": "getConsoleLogs", "purpose": "View all console output"},
+      {"command": "getConsoleErrors", "purpose": "Focus on console errors only"}
+    ],
+    "network_monitoring": [
+      {"command": "getNetworkLogs", "purpose": "Check all network requests"},
+      {"command": "getNetworkErrors", "purpose": "Identify failed network requests"}
+    ],
+    "ui_inspection": [
+      {"command": "takeScreenshot", "purpose": "Capture current UI state"},
+      {"command": "getSelectedElement", "purpose": "Inspect specific DOM elements"}
+    ],
+    "performance_auditing": [
+      {"command": "runAccessibilityAudit", "purpose": "Check accessibility compliance"},
+      {"command": "runPerformanceAudit", "purpose": "Identify performance bottlenecks"},
+      {"command": "runSEOAudit", "purpose": "Evaluate search engine optimization"},
+      {"command": "runBestPracticesAudit", "purpose": "Check web development best practices"},
+      {"command": "runNextJSAudit", "purpose": "Next.js specific optimizations"}
+    ],
+    "advanced_tools": [
+      {"command": "runDebuggerMode", "purpose": "Interactive debugging session"},
+      {"command": "runAuditMode", "purpose": "Comprehensive multi-factor audit"},
+      {"command": "wipeLogs", "purpose": "Clear all browser logs"}
+    ]
+  }
+}
+```
+
+## code_organization
+```json
+{
+  "component_declaration": "Use `function` declaration (not arrow functions)",
+  "typing": "TypeScript interfaces for props (prefer interfaces over types)",
+  "error_handling": "Early returns for error conditions",
+  "file_structure": [
+    {"order": 1, "section": "Exported component"},
+    {"order": 2, "section": "Subcomponents"},
+    {"order": 3, "section": "Helpers"},
+    {"order": 4, "section": "Static content"},
+    {"order": 5, "section": "Types"}
+  ],
+  "file_naming": "lowercase-with-dashes",
+  "file_extensions": [
+    {".tsx": "React components"},
+    {".ts": "Utilities"}, 
+    {".config.ts": "Configuration files"},
+    {".test.ts": "Test files"},
+    {".context.tsx": "Context definitions"},
+    {".type.ts": "Type definitions"},
+    {".hook.ts": "Custom hooks"}
+  ]
+}
+```
+
+## error_handling
+```json
+{
+  "principles": [
+    {"principle": "Handle errors at beginning of functions"},
+    {"principle": "Use early returns for error conditions"},
+    {"principle": "Place happy path last in function"},
+    {"principle": "Implement proper error boundaries"},
+    {"principle": "Model expected errors as return values in Server Actions"}
+  ],
+  "user_experience": "User-friendly error messages",
+  "validation": "Zod for form validation"
+}
+```
+
+## performance_optimization
+```json
+{
+  "metrics_priority": [
+    {"metric": "LCP", "description": "Largest Contentful Paint"},
+    {"metric": "CLS", "description": "Cumulative Layout Shift"},
+    {"metric": "FID", "description": "First Input Delay"}
+  ],
+  "techniques": [
+    {"technique": "Dynamic imports", "purpose": "Code splitting"},
+    {"technique": "RSC and preload pattern", "purpose": "Efficient data fetching"},
+    {"technique": "Query optimization", "purpose": "Reduce database load"},
+    {"technique": "Image optimization", "purpose": "Reduce bandwidth usage"},
+    {"technique": "Suspense boundaries", "purpose": "Better loading states"}
+  ]
+}
+```
+
+## documentation_testing
+```json
+{
+  "documentation": [
+    {"requirement": "Document complex logic with clear comments"},
+    {"requirement": "Use JSDoc comments for functions and components"}
+  ],
+  "testing": [
+    {"level": "Unit tests", "target": "Utility functions and hooks"},
+    {"level": "Integration tests", "target": "Complex components"},
+    {"level": "E2E tests", "target": "Critical user flows"}
+  ]
+}
+``` 

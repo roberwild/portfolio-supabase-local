@@ -1,0 +1,179 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+ ---
+description: Resenia Project Rules
+globs:
+alwaysApply: true
+---
+# Resenia Project Rules & Standards
+
+## Tech Stack & Architecture Overview
+
+You are an expert in developing with:
+- TypeScript
+- Next.js 15+ App Router
+- React 19+
+- Prisma ORM
+- Supabase Auth
+- Shadcn Components
+- Tailwind CSS
+- Radix UI & Shadcn UI
+- GraphQL & Genql (when needed)
+- BullMQ
+
+## Key Architecture Principles
+
+### Authentication System
+- Supabase Auth is the single source of truth for user authentication
+- Prisma directly references `auth.users` through multi-schema support
+- All foreign keys to users must use UUID types (`@db.Uuid`)
+- Never duplicate user data in separate tables
+
+### Database & ORM
+- Use Prisma's `multiSchema` to access both `public` and `auth` schemas
+- Keep Prisma schema organized with proper relationship declarations
+- Implement Row Level Security (RLS) in Supabase for data protection
+- Follow the established integration patterns for Prisma + Supabase Auth
+- When database changes are needed, I'll prioritize Prisma migrations over raw SQL scripts
+- Use the Supabase MCP to query the database before generating SQL queries
+- If SQL queries are unavoidable, provide them one by one to allow checking each result.
+
+### Frontend Development
+- Prefer React Server Components (RSC) when possible
+- Minimize `use client` usage to small interactive components
+- Use functional components with TypeScript interfaces
+- Apply the mobile-first approach for responsive design
+- Use Tailwind CSS for styling (utility-first approach)
+- Use Shadcn UI components extended with Radix UI when needed
+- Use BrowserTools MCP for browser debugging (console/network logs, screenshots) and auditing (accessibility, performance, SEO): `getConsoleLogs`, `getConsoleErrors`, `getNetworkLogs`, `getNetworkErrors`, `takeScreenshot`, `getSelectedElement`, `runAccessibilityAudit`, `runPerformanceAudit`, `runSEOAudit`, `runBestPracticesAudit`, `runNextJSAudit`, `runDebuggerMode`, `runAuditMode`, `wipeLogs`
+- Keep design consistent through out all the project.
+
+## Coding Standards
+
+### General TypeScript
+- Avoid using Javascript if can be done in Typescript
+- Use the `function` keyword for pure functions
+- Favor functional, declarative programming over imperative
+- Use TypeScript for all code with proper type definitions
+- Prefer interfaces over types for better extensibility
+- Use descriptive variable names with auxiliary verbs (e.g., `isLoading`, `hasError`)
+- Avoid unnecessary curly braces for simple conditional statements
+- Use early returns for error conditions to improve readability
+- Do not oversize components, if an aggregation is making a component too big, refactor before
+
+
+### File Structure & Naming
+- Use lowercase with dashes for directories (e.g., `components/auth-wizard`)
+- Follow the pattern: Exported component, subcomponents, helpers, static content, types
+- Use appropriate file extensions: `.tsx` for React components, `.ts` for utilities
+- For specialized files use: `.config.ts`, `.test.ts`, `.context.tsx`, `.type.ts`, `.hook.ts`
+
+### React & Next.js
+- Create functional components using `function` declaration, not arrow functions with `const`
+- Use TypeScript interfaces for props and state
+- Use declarative JSX syntax
+- Place static content and type interfaces at end of file
+- Use content variables for static text outside render functions
+- Wrap client components in Suspense with fallback UI
+- Use Zod for form validation
+- Optimize images with proper format, sizing, and lazy loading
+- Use next-safe-action for type-safe server actions
+
+### Styling
+- Use Tailwind CSS with utility-first approach
+- Apply Class Variance Authority (CVA) for component variants
+- Maintain consistent spacing, padding, and margin values
+- Ensure responsive design works on all screen sizes
+
+## Prisma + Supabase Auth Integration Guidelines
+
+### Schema Definition
+- Configure Prisma with multiSchema support:
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+  engineType      = "binary"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["public", "auth"]
+}
+```
+
+- Define the User model referencing Supabase Auth:
+```prisma
+model User {
+  id              String            @id @db.Uuid
+  email           String            @unique
+  raw_user_meta_data Json?          @map("raw_user_meta_data")
+  raw_app_meta_data Json?           @map("raw_app_meta_data")
+  created_at      DateTime          @db.Timestamptz(6)
+  
+  // Relationships
+  // Add your relationships here
+  
+  @@map("users")
+  @@schema("auth")
+}
+```
+
+- Always use `@db.Uuid` annotation for fields referencing `auth.users`
+- For related models, use proper UUID references:
+```prisma
+model UserProfile {
+  id             String       @id @default(cuid())
+  userId         String       @map("user_id") @db.Uuid
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Other fields
+  
+  @@map("user_profiles")
+  @@schema("public")
+}
+```
+
+### Authentication Workflows
+- Use Supabase Auth middleware for session management
+- Handle authentication in middleware.ts for protected routes
+- Follow the established pattern for auth callbacks and token exchange
+- Use the createClient functions from utils/supabase for server and client
+
+### User Data Management
+- Keep user management in Supabase Auth (signup, login, password reset)
+- Store extended profile data in separate tables with foreign keys to `auth.users`
+- Never duplicate user data that already exists in auth.users
+- Use TypeScript to enforce UUID type with user IDs
+
+## Error Handling & Validation
+- Handle errors at the beginning of functions
+- Use early returns for error conditions
+- Place the happy path last in the function
+- Implement proper error logging and user-friendly messages
+- Use error boundaries for unexpected errors
+- Model expected errors as return values in Server Actions
+
+## Performance & Optimization
+- Prioritize Web Vitals (LCP, CLS, FID)
+- Use dynamic loading for non-critical components
+- Implement proper data fetching strategies (RSC, preload pattern)
+- Monitor and optimize database queries
+- Use proper caching strategies
+- Implement BullMQ for background job processing (email sending, report generation, data processing) with Redis when operations are resource-intensive, need scheduling, require retries, or benefit from rate limiting
+
+## Documentation & Testing
+- Document complex logic with clear, concise comments
+- Use JSDoc comments for functions and components
+- Implement unit tests for utility functions and hooks
+- Use integration tests for complex components
+- Test critical user flows with end-to-end tests
+
+
+---
+
+Refer to Next.js documentation for best practices in Data Fetching, Rendering, and Routing. For Supabase Auth integration, follow the patterns established in the core authentication files.
